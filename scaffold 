@@ -1,0 +1,123 @@
+---
+
+Project Scaffold: crawl_redfin-intelligence
+
+Directory Structure
+
+crawl_redfin-intelligence/
+│
+├── backend_rust/                  # Fast, async Redfin crawler (Actix or Tokio-based)
+│   ├── src/
+│   │   ├── main.rs
+│   │   ├── crawler.rs
+│   │   ├── scheduler.rs
+│   │   ├── proxy_rotation.rs
+│   │   └── parser.rs
+│   └── Cargo.toml
+│
+├── intelligence_core/            # Python ML + reasoning engine (FastAPI)
+│   ├── main.py
+│   ├── inference/
+│   │   ├── match_detector.py     # Address + name matching intelligence
+│   │   ├── ownership_model.py    # ML/NLP to detect past ownership traces
+│   │   └── recommender.py        # Recovery action recommender
+│   ├── data/
+│   ├── models/
+│   └── requirements.txt
+│
+├── database/
+│   ├── schema.sql                # PostgreSQL schema
+│   └── init_db.py                # Fast setup
+│
+├── messaging/
+│   ├── producer.py               # Rust sends crawled data here (e.g., via Kafka)
+│   └── consumer.py               # Python ingests data
+│
+├── dashboard_ui/ (optional)      # Tauri or web dashboard for diff visualization
+│
+└── README.md
+
+
+---
+
+Core Components
+
+1. Rust Backend (Fast, Resilient Crawler)
+
+Crawler supports:
+
+URL templates (Redfin search & property pages)
+
+Proxy rotation & IP banning resilience
+
+Pushes new data to Kafka or Redis
+
+
+
+// backend_rust/src/main.rs
+#[actix_web::main]
+async fn main() {
+    crawler::start().await;
+}
+
+
+---
+
+2. Python ML Intelligence Engine
+
+# intelligence_core/inference/match_detector.py
+def match_address_to_identity(address, known_addresses):
+    # Use fuzzy matching + USPS normalization
+    return any(fuzz_ratio(address, known) > 90 for known in known_addresses)
+
+# intelligence_core/inference/ownership_model.py
+def detect_past_owner_mentions(property_text: str, your_name: str) -> bool:
+    # Use spaCy or BERT to detect named entity mentions that match your name
+    return your_name.lower() in property_text.lower()
+
+
+---
+
+3. Recovery Recommender
+
+def recommend_action(change_score, price_trend, ownership_match):
+    if ownership_match and change_score > 0.7:
+        return "Contact Agent"
+    elif price_trend == "falling":
+        return "Wait"
+    else:
+        return "Track"
+
+
+---
+
+4. Database Schema (PostgreSQL)
+
+CREATE TABLE properties (
+    id SERIAL PRIMARY KEY,
+    address TEXT,
+    last_seen TIMESTAMP,
+    price NUMERIC,
+    ownership_hint BOOLEAN,
+    recommended_action TEXT
+);
+
+
+---
+
+5. Optional Dashboard (Next.js or Tauri)
+
+Shows:
+
+Property timeline
+
+Changes (price, features)
+
+ML inferences (was this yours?)
+
+Suggested next move
+
+
+
+
+---
